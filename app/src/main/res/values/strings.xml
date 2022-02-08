@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">CleanArchitecture</string>
+    <string name="txtNameOfBook">Короткие история времени</string>
+    <string name="book">Книга</string>
+    <string name="author">Автор</string>
+    <string name="save">Сохранить</string>
+    <string name="price">Цена</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
