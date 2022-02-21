@@ -1,17 +1,20 @@
 package com.motion.cleanarchitecture.presentation
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.*
 import com.motion.cleanarchitecture.data.BookListRepositoryImpl
 import com.motion.cleanarchitecture.domain.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import java.lang.Exception
 import java.util.stream.Stream
 
 
-class DetailViewModel : ViewModel() {
+class DetailViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = BookListRepositoryImpl
+    private val repository = BookListRepositoryImpl(application)
 
     private val getBookItemUseCase = GetBookItemUseCase(repository)
     private val addBookItemUseCase = AddBookItemUseCase(repository)
@@ -38,8 +41,11 @@ class DetailViewModel : ViewModel() {
         get() = _closeScreen
 
     fun getBookItem(bookId: Int) {
-        val item = getBookItemUseCase.getBookItem(bookId)
-        _bookItem.value = item
+        viewModelScope.launch {
+            val item = getBookItemUseCase.getBookItem(bookId)
+            _bookItem.postValue(item)
+        }
+
     }
 
     fun addBookItem(author: String?, name: String?, price: String?) {
@@ -48,9 +54,12 @@ class DetailViewModel : ViewModel() {
         val priceOfBook = parsePrice(price)
         val validate = validateInput(nameOfBook, authorOfBook, priceOfBook)
         if (validate) {
-            val bookItem = BookItem(nameOfBook, authorOfBook, priceOfBook, true)
-            addBookItemUseCase.addBookItem(bookItem)
-            finishScreen()
+            viewModelScope.launch {
+                val bookItem = BookItem(nameOfBook, authorOfBook, priceOfBook, true)
+                addBookItemUseCase.addBookItem(bookItem)
+                finishScreen()
+            }
+
         }
     }
 
@@ -61,9 +70,12 @@ class DetailViewModel : ViewModel() {
         val validate = validateInput(nameOfBook, authorOfBook, priceOfBook)
         if (validate) {
             _bookItem.value?.let {
-                val item = it.copy(name = nameOfBook, author = authorOfBook, price = priceOfBook)
-                editBookItemUseCase.editBookItem(item)
-                finishScreen()
+                viewModelScope.launch {
+                    val item = it.copy(name = nameOfBook, author = authorOfBook, price = priceOfBook)
+                    editBookItemUseCase.editBookItem(item)
+                    finishScreen()
+                }
+
             }
         }
     }
@@ -116,5 +128,4 @@ class DetailViewModel : ViewModel() {
         }
         return result
     }
-
 }

@@ -1,14 +1,18 @@
 package com.motion.cleanarchitecture.presentation
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.*
 import com.motion.cleanarchitecture.data.BookListRepositoryImpl
 import com.motion.cleanarchitecture.domain.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
-class BookListViewModel : ViewModel() {
+class BookListViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = BookListRepositoryImpl
+    private val repository = BookListRepositoryImpl(application)
+
 
     private val getBookListUseCase = GetBookListUseCase(repository)
     private val editBookItemUseCase = EditBookItemUseCase(repository)
@@ -17,18 +21,22 @@ class BookListViewModel : ViewModel() {
 
      val getBookList = getBookListUseCase.getBookList()
 
-
-
     fun changeState(bookItem: BookItem) {
-        val newElement = bookItem.copy(state = !bookItem.state)
-        editBookItemUseCase.editBookItem(newElement)
+        viewModelScope.launch {
+            val newElement = bookItem.copy(state = !bookItem.state)
+            editBookItemUseCase.editBookItem(newElement)
+        }
     }
 
     fun deleteBookItem(bookItem: BookItem) {
-        deleteBookItemUseCase.deleteBookItem(bookItem)
+        viewModelScope.launch {
+            deleteBookItemUseCase.deleteBookItem(bookItem)
+        }
     }
 
     fun deleteBookList(){
-        deleteBookListUseCase.deleteBookList()
+        viewModelScope.launch {
+            deleteBookListUseCase.deleteBookList()
+        }
     }
 }

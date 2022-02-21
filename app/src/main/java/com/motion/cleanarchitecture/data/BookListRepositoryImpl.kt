@@ -1,59 +1,43 @@
 package com.motion.cleanarchitecture.data
 
+import android.app.Application
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.MediatorLiveData
+import androidx.lifecycle.Transformations
 import com.motion.cleanarchitecture.domain.BookItem
 import com.motion.cleanarchitecture.domain.BookListRepository
-import java.lang.RuntimeException
-import kotlin.random.Random
 
-object BookListRepositoryImpl : BookListRepository {
+class BookListRepositoryImpl(
+    application: Application
+) : BookListRepository {
 
-    private val bookListLD =MutableLiveData<List<BookItem>>()
-    private val bookList = sortedSetOf<BookItem>({ e1, e2 -> e1.id.compareTo(e2.id) })
-    private var autogenerateId = 0
+    private val bookListDao = AppDataBase.getInstance(application).booLIstDao()
+   private val mapper = BookListMapper()
 
-    init {
-for (i in 0 until 20){
-val element = BookItem("Book $i","Author $i",i*50)
-    addBookItem(element)
-}
+
+    override suspend fun addBookItem(bookItem: BookItem) {
+      bookListDao.addBookItem(mapper.mapEntityToDbModel(bookItem))
     }
 
-    override fun addBookItem(bookItem: BookItem) {
-        if (bookItem.id == BookItem.START_ID) {
-            bookItem.id = autogenerateId++
-        }
-        bookList.add(bookItem)
-        updateBookList()
+    override suspend fun deleteBookItem(bookItem: BookItem) {
+        bookListDao.deleteBookItem(bookItem.id)
     }
 
-    override fun deleteBookItem(bookItem: BookItem) {
-        bookList.remove(bookItem)
-        updateBookList()
+    override suspend fun deleteBookList() {
+        bookListDao.deleteBookList()
     }
 
-    override fun deleteBookList() {
-        bookList.removeAll(bookList)
-        updateBookList()
+    override suspend fun editBookItem(bookItem: BookItem) {
+        bookListDao.addBookItem(mapper.mapEntityToDbModel(bookItem))
     }
 
-    override fun editBookItem(bookItem: BookItem) {
-        val oldElement = getBookItem(bookItem.id)
-        bookList.remove(oldElement)
-        addBookItem(bookItem)
+    override suspend fun getBookItem(bookId: Int): BookItem {
+     val item = bookListDao.getShopItem(bookId)
+        return mapper.mapDbModelToEntity(item)
     }
 
-    override fun getBookItem(bookId: Int): BookItem {
-         return bookList.find {
-it.id == bookId
-         } ?: throw RuntimeException("Элемент $bookId  не найден ")
+    override fun getBookList(): LiveData<List<BookItem>> = Transformations.map(bookListDao.getShopList()){
+        mapper.mapListDbModelToListEntity(it)
     }
 
-    override fun getBookList(): LiveData<List<BookItem>> {
- return bookListLD
-    }
-    private fun updateBookList(){
-bookListLD.value =bookList.toList()
-    }
 }

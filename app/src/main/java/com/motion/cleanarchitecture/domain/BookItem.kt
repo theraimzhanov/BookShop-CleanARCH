@@ -8,6 +8,6 @@ data class BookItem(
     var id: Int = START_ID
 ){
     companion object{
-        const val START_ID = -99
+        const val START_ID = 0
     }
 }
